@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>App Forge — l'app qui crée des apps</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f6f4ef; --panel:#ffffff; --ink:#1d1b18; --muted:#6f6a61; --line:#e4dfd4;
+  --accent:#d9531e; --accent-ink:#ffffff; --soft:#fbeee7; --code:#16140f; --code-ink:#f0e9d8; --folder:#5b8def;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14130f; --panel:#1d1b16; --ink:#f1ece0; --muted:#9b9486; --line:#2e2b23;
+    --accent:#ff7a3d; --accent-ink:#1a0d05; --soft:#2a1d15; --code:#0d0c09; --code-ink:#eadfc6; --folder:#7aa2ff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14130f; --panel:#1d1b16; --ink:#f1ece0; --muted:#9b9486; --line:#2e2b23;
+  --accent:#ff7a3d; --accent-ink:#1a0d05; --soft:#2a1d15; --code:#0d0c09; --code-ink:#eadfc6; --folder:#7aa2ff;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:22px}
+h1{font-size:22px;margin:0;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:14px;margin:0}
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+textarea{width:100%;min-height:120px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);color:var(--ink);font:inherit;font-size:15px}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 11px;font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--accent);background:var(--soft)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink);width:100%}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);width:auto;padding:8px 12px;font-size:13px}
+.btn.ghost:hover{border-color:var(--accent)}
+.btn.solid{width:auto;padding:9px 14px;font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hint{font-size:12.5px;color:var(--muted);margin-top:10px}
+.err{color:#c0392b;font-size:13px;margin-top:10px}
+h2{font-size:14px;margin:18px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hist{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
+.hist button{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist button:hover,.hist button.on{border-color:var(--accent);background:var(--soft)}
+.tabs{display:flex;gap:4px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.tab{border:0;background:transparent;color:var(--muted);padding:8px 12px;border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.tab.on{background:var(--soft);color:var(--accent)}
+.spacer{flex:1}
+.stage{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;min-height:520px;position:relative}
+iframe{width:100%;height:560px;border:0;display:block;background:#fff}
+.empty{display:grid;place-items:center;text-align:center;color:var(--muted);height:560px;padding:24px;background:var(--panel)}
+.empty .big{font-size:44px;margin-bottom:8px}
+pre{margin:0;background:var(--code);color:var(--code-ink);border-radius:0 0 12px 12px;padding:14px;font-size:12.5px;line-height:1.5;overflow:auto;height:380px;white-space:pre;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+select,input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
+.opt{margin:0 0 14px}
+.prog{margin-top:12px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s ease}
+.eta{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-top:6px}
+.eta b{color:var(--ink)}
+/* explorateur façon dépôt Git */
+.repo{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.repo-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--line);font-size:13px}
+.repo-head b{font-size:14px}
+.badge{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:11.5px;color:var(--muted)}
+.frow{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer;background:transparent;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;color:var(--ink);font-family:inherit}
+.frow:last-child{border-bottom:0}
+.frow:hover,.frow.on{background:var(--soft)}
+.frow .ic{width:18px;text-align:center}
+.frow .sz{margin-left:auto;color:var(--muted);font-size:12px}
+.frow.dir{font-weight:600}
+.viewer-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 14px;background:var(--bg);border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;font-size:13px;margin-top:12px}
+.git{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.git h3{margin:0 0 10px;font-size:15px}
+.two{display:grid;grid-template-columns:130px 1fr;gap:8px;margin-bottom:12px}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+.steps{margin:0 0 4px;padding-left:20px;font-size:13.5px}
+.steps li{margin:4px 0}
+.git pre.cmd{height:auto;border-radius:10px;font-size:12px;margin-top:8px}
+.live{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:var(--code);color:var(--code-ink);overflow:hidden}
+.live-h{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.08);flex-wrap:wrap}
+.live-h code{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--accent)}
+.live-h .badge{margin-left:auto;border-color:rgba(255,255,255,.2);color:var(--code-ink)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
+#liveTail{height:auto;max-height:92px;min-height:58px;border-radius:0;font-size:12px;overflow:hidden;white-space:pre-wrap;word-break:break-all}
+.frow.writing .sz::before{content:"✍️ ";}
+.hidden{display:none!important}
+.dbbox{margin-top:16px;padding-top:6px;border-top:1px solid var(--line)}
+.ver{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.ver b{color:var(--ink)}
+</style>
+<script type="text/plain" id="tpl-db">/* db.js — couche de données de l'app (générée par App Forge)
+   Trois modes, choisis automatiquement (le code de l'app ne change pas) :
+   - "supabase" : si src/config.js contient supabaseUrl + supabaseAnonKey (même base en local et déployé)
+   - "local"    : sinon, localStorage du navigateur (marche en local comme une fois déployé)
+   - "memory"   : si le stockage est indisponible (ex. aperçu isolé) : données perdues au rechargement */
+(function(){
+  var cfg = window.APP_DB_CONFIG || {};
+  var schema = (window.APP_SCHEMA && window.APP_SCHEMA.tables) || {};
+  var mode = "memory", store = null, memData = null;
+  if(cfg.supabaseUrl && cfg.supabaseAnonKey){ mode = "supabase"; }
+  else {
+    try{ var k = "__appforge_test__"; window.localStorage.setItem(k,"1"); window.localStorage.removeItem(k); store = window.localStorage; mode = "local"; }
+    catch(e){ mode = "memory"; }
+  }
+  var KEY = "appforge:db:" + (cfg.namespace || document.title || "app");
+  var data = null;
+
+  function uid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "id-" + Date.now().toString(36) + Math.random().toString(36).slice(2,10);
+  }
+  function seedAll(){
+    var d = {};
+    Object.keys(schema).forEach(function(t){
+      d[t] = (schema[t].seed || []).map(function(r){
+        var row = Object.assign({}, r); row.id = uid(); row.created_at = new Date().toISOString(); return row;
+      });
+    });
+    return d;
+  }
+  function load(){
+    if(mode === "local"){ try{ return JSON.parse(store.getItem(KEY) || "null"); }catch(e){ return null; } }
+    return memData;
+  }
+  function save(){
+    if(mode === "local"){ try{ store.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+    else memData = data;
+  }
+  function rows(name){
+    if(!data){ data = load() || seedAll(); save(); }
+    if(!data[name]) data[name] = [];
+    return data[name];
+  }
+  function remote(path, opts){
+    opts = opts || {};
+    var headers = { apikey: cfg.supabaseAnonKey, Authorization: "Bearer " + cfg.supabaseAnonKey, "Content-Type": "application/json" };
+    if(opts.prefer) headers.Prefer = opts.prefer;
+    return fetch(cfg.supabaseUrl.replace(/\/$/, "") + "/rest/v1/" + path, {
+      method: opts.method || "GET", headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function(r){
+      if(!r.ok) return r.text().then(function(t){ throw new Error("Supabase " + r.status + " : " + t); });
+      return r.status === 204 ? null : r.json();
+    });
+  }
+  function table(name){
+    if(!schema[name]) throw new Error("Table inconnue : " + name);
+    if(mode === "supabase"){
+      return {
+        list: function(){ return remote(name + "?select=*&order=created_at.asc"); },
+        insert: function(row){ return remote(name, { method: "POST", body: row, prefer: "return=representation" }).then(function(r){ return r[0]; }); },
+        update: function(id, patch){ return remote(name + "?id=eq." + encodeURIComponent(id), { method: "PATCH", body: patch, prefer: "return=representation" }).then(function(r){ return r[0]; }); },
+        remove: function(id){ return remote(name + "?id=eq." + encodeURIComponent(id), { method: "DELETE" }).then(function(){}); }
+      };
+    }
+    return {
+      list: function(){ return Promise.resolve(rows(name).map(function(r){ return Object.assign({}, r); })); },
+      insert: function(row){
+        var r = Object.assign({}, row, { id: uid(), created_at: new Date().toISOString() });
+        rows(name).push(r); save(); return Promise.resolve(Object.assign({}, r));
+      },
+      update: function(id, patch){
+        var list = rows(name), i = list.findIndex(function(r){ return r.id === id; });
+        if(i < 0) return Promise.reject(new Error("Ligne introuvable"));
+        list[i] = Object.assign({}, list[i], patch, { id: list[i].id }); save(); return Promise.resolve(Object.assign({}, list[i]));
+      },
+      remove: function(id){
+        data[name] = rows(name).filter(function(r){ return r.id !== id; }); save(); return Promise.resolve();
+      }
+    };
+  }
+  window.DB = {
+    mode: mode,
+    ready: Promise.resolve(),
+    table: table,
+    reset: function(){ if(mode === "local"){ try{ store.removeItem(KEY); }catch(e){} } memData = null; data = null; }
+  };
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⚒</div>
+    <div>
+      <h1>App Forge</h1>
+      <p class="sub">Décris une app, je génère un vrai projet : plusieurs fichiers, prêt pour GitHub ou GitLab.</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <label for="prompt" id="plabel">Quelle app veux-tu créer ?</label>
+      <textarea id="prompt" placeholder="Ex : un chronomètre Pomodoro avec statistiques de la journée…"></textarea>
+      <div class="chips" id="chips"></div>
+      <div class="opt">
+        <label for="tier">Modèle</label>
+        <select id="tier">
+          <option value="complex" selected>Le plus puissant (meilleurs résultats, plus lent)</option>
+          <option value="default">Équilibré</option>
+          <option value="quick">Rapide (apps simples)</option>
+        </select>
+      </div>
+      <button class="btn" id="go"><span id="goTxt">Générer l'app</span></button>
+      <div class="prog hidden" id="prog">
+        <div class="bar"><i id="barfill"></i></div>
+        <div class="eta"><span id="phase">Réflexion…</span><b id="etaTxt">≈ …</b></div>
+      </div>
+      <div class="err hidden" id="err"></div>
+      <div class="dbbox" id="dbbox">
+        <h2>Base de données</h2>
+        <label for="dbPrompt" id="dbLabel">Décris ton app et sa base de données : quelles données, et à quoi elle ressemble</label>
+        <textarea id="dbPrompt" style="min-height:90px" placeholder="Ex : des tâches (titre, statut, échéance) rangées par catégorie, avec quelques exemples réalistes…"></textarea>
+        <button class="btn" id="dbGo" style="margin-top:10px"><span id="dbGoTxt">Créer l'app + sa base de données</span></button>
+        <div class="hint" id="dbInfo">Une IA conçoit les tables, écrit l'app et la branche dessus. Sans réglage, les données restent dans le navigateur (en local comme une fois déployé). Avec Supabase, l'app locale et l'app déployée partagent la même base. L'aperçu utilise une base en mémoire.</div>
+      </div>
+      <div class="hint" id="hint">Chaque génération est réalisée par Claude et utilise ton quota. La plateforme choisit le modèle exact de chaque niveau ; le niveau réellement utilisé s'affiche après la génération.</div>
+
+      <h2>Historique</h2>
+      <div class="hist" id="hist"><span class="hint">Rien pour l'instant.</span></div>
+    </section>
+
+    <section class="card">
+      <div class="tabs">
+        <button class="tab on" data-tab="preview">Aperçu</button>
+        <button class="tab" data-tab="code">Fichiers</button>
+        <div class="spacer"></div>
+        <button class="btn ghost hidden" id="reload">↻</button>
+        <button class="btn ghost hidden" id="zipTop">Télécharger .zip</button>
+      </div>
+
+      <div class="live hidden" id="livebar">
+        <div class="live-h"><span class="dot"></span><b>Claude écrit</b><code id="livePath">…</code><span class="badge" id="liveMeta"></span></div>
+        <pre id="liveTail"></pre>
+      </div>
+
+      <div id="pane-preview" class="stage">
+        <div class="empty" id="empty"><div><div class="big" id="emptyIc">✨</div><span id="emptyTxt">Ton app apparaîtra ici.</span></div></div>
+        <iframe id="frame" class="hidden" sandbox="allow-scripts allow-forms allow-modals allow-popups" title="Aperçu"></iframe>
+      </div>
+
+      <div id="pane-code" class="hidden">
+        <div class="repo">
+          <div class="repo-head"><span><b id="repoName">mon-app</b> <span class="badge">projet</span></span><span id="repoCount" class="badge"></span></div>
+          <div id="tree"></div>
+        </div>
+        <div class="viewer-head"><span id="vpath">—</span><button class="btn ghost" id="copy">Copier ce fichier</button></div>
+        <pre id="viewer"></pre>
+      </div>
+
+      <div class="git hidden" id="gitbox">
+        <h3>Envoyer le projet sur GitHub ou GitLab</h3>
+        <div class="two">
+          <select id="gitHost" aria-label="Plateforme">
+            <option value="github">GitHub</option>
+            <option value="gitlab">GitLab</option>
+          </select>
+          <input type="text" id="gitUrl" placeholder="URL du dépôt (optionnel) : https://github.com/ton-compte/mon-app" autocomplete="off" spellcheck="false">
+        </div>
+        <ol class="steps">
+          <li>Télécharge le projet, puis décompresse-le.</li>
+          <li>Ouvre la page d'envoi de ton dépôt.</li>
+          <li>Glisse tous les fichiers et le dossier <code>src</code> dedans, puis valide (« Commit »).</li>
+        </ol>
+        <div class="row" style="margin-top:10px">
+          <button class="btn solid" id="gitZip">1 · Télécharger le projet (.zip)</button>
+          <button class="btn solid" id="gitOpen">2 · Ouvrir GitHub ↗</button>
+        </div>
+        <div class="ver" id="verLabel"></div>
+        <div class="hint" id="gitMsg">Dépôt vide ou nouveau ? Sans URL, le bouton 2 ouvre la création d'un nouveau dépôt.</div>
+        <h2 style="margin-top:16px">Ou en une commande</h2>
+        <div class="hint" style="margin:0 0 6px">Ce script recrée tous les fichiers puis fait le commit et le push (il faut avoir Git installé et être connecté).</div>
+        <div class="row"><button class="btn ghost" id="gitSh">Télécharger le script .sh</button><button class="btn ghost" id="gitCopy">Copier la commande</button></div>
+        <pre class="cmd" id="gitCmds"></pre>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+/* ---------- Fonctions pures (testées hors navigateur) ---------- */
+var AF = (function(){
+  var SYSTEM = [
+    "Tu es un générateur de projets web. Tu produis UN PROJET COMPLET, sous forme de plusieurs fichiers, qui fonctionne en ouvrant simplement index.html dans un navigateur.",
+    "FORMAT DE SORTIE OBLIGATOIRE : une suite de blocs, chacun commençant par une ligne exactement de la forme",
+    "=== FILE: chemin/du/fichier ===",
+    "suivie du contenu brut du fichier, sans balises markdown ni ```. Aucun texte en dehors des blocs.",
+    "Fichiers à produire, dans cet ordre :",
+    "1. index.html : page HTML5 qui charge le style avec <link rel=\"stylesheet\" href=\"src/style.css\"> dans le head et le script avec <script src=\"src/main.js\"><\/script> en fin de body (ces deux balises exactement sous cette forme).",
+    "2. src/style.css : tout le style, avec un vrai parti pris visuel, responsive, et un mode sombre via prefers-color-scheme.",
+    "3. src/main.js : toute la logique, en JavaScript pur.",
+    "4. README.md : en français ; titre, description, fonctionnalités, section « Lancer en local » (ouvrir index.html, ou npm start), et section « Déployer » (Vercel ou GitHub Pages).",
+    "5. package.json : name en kebab-case propre à l'app, version, private, description, scripts.start = \"npx serve .\".",
+    "6. vercel.json : { \"cleanUrls\": true }.",
+    "7. .gitignore : node_modules, .env, .DS_Store, dist.",
+    "Contraintes : aucune ressource externe (pas de CDN, pas d'image distante, pas de police web, pas de fetch) ; JAMAIS localStorage, sessionStorage ni IndexedDB, l'état reste en mémoire ; pas de balise <form>, utilise des gestionnaires d'événements ; interface en français sauf demande contraire ; l'app doit être réellement fonctionnelle, sans erreur, avec états vides, feedback et données d'exemple si utile.",
+    "Tu peux ajouter d'autres fichiers (par exemple src/utils.js) uniquement s'ils sont chargés par index.html avec une balise <script src=\"...\"> relative."
+  ].join("\n");
+
+  function stripFences(t){
+    t = t.replace(/^\s*```[a-zA-Z]*\s*\n/, "").replace(/\n```\s*$/, "");
+    return t;
+  }
+  function parse(text){
+    var t = (text||"").replace(/\r/g,"");
+    var re = /^={3,}\s*FILE:\s*(.+?)\s*={3,}\s*$/gm, m, marks = [];
+    while((m = re.exec(t))) marks.push({path:m[1].replace(/^\.?\//,"").trim(), start:m.index, end:m.index+m[0].length});
+    var files = {};
+    if(!marks.length){
+      var h = t.trim().replace(/^```[a-zA-Z]*\s*\n?/,"").replace(/\n?```\s*$/,"");
+      var i = h.search(/<!doctype html|<html/i);
+      if(i>=0){ files["index.html"] = h.slice(i).trim()+"\n"; }
+      return files;
+    }
+    marks.forEach(function(mk,idx){
+      var body = t.slice(mk.end, idx+1<marks.length ? marks[idx+1].start : t.length);
+      body = stripFences(body.replace(/^\n/,"")).replace(/\s+$/,"") + "\n";
+      if(mk.path && !/\.\./.test(mk.path)) files[mk.path] = body;
+    });
+    return files;
+  }
+  function parsePartial(text){
+    var t = (text||"").replace(/\r/g,""), re = /^={3,}\s*FILE:\s*(.+?)\s*={3,}\s*$/gm, m, marks = [];
+    while((m = re.exec(t))) marks.push({path:m[1].replace(/^\.?\//,"").trim(), start:m.index, end:m.index+m[0].length});
+    var files = {}, order = [], current = null;
+    marks.forEach(function(mk,idx){
+      var last = idx===marks.length-1;
+      var body = t.slice(mk.end, last ? t.length : marks[idx+1].start).replace(/^\n/,"");
+      body = stripFences(body);
+      if(last){ body = body.replace(/\n={1,3}[^\n]*$/,""); current = mk.path; }
+      else body = body.replace(/\s+$/,"") + "\n";
+      if(mk.path && !/\.\./.test(mk.path)){ files[mk.path] = body; order.push(mk.path); }
+    });
+    return {files:files, order:order, current:current};
+  }
+  function serialize(files){
+    return Object.keys(files).map(function(p){ return "=== FILE: "+p+" ===\n"+files[p].replace(/\s+$/,"")+"\n"; }).join("\n");
+  }
+  function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+  function previewHtml(files){
+    var html = files["index.html"]; if(!html) return "";
+    Object.keys(files).forEach(function(p){
+      var rp = esc(p);
+      if(/\.css$/i.test(p)){
+        html = html.replace(new RegExp("<link[^>]*href=[\"'](?:\\./)?"+rp+"[\"'][^>]*>","i"), function(){ return "<style>\n"+files[p]+"\n</style>"; });
+      } else if(/\.js$/i.test(p)){
+        html = html.replace(new RegExp("<script[^>]*src=[\"'](?:\\./)?"+rp+"[\"'][^>]*>\\s*<\/script>","i"), function(){ return "<script>\n"+files[p].replace(/<\/script/gi,"<\\/script")+"\n<\/script>"; });
+      }
+    });
+    return html;
+  }
+  function slugOf(files){
+    try{ var n = JSON.parse(files["package.json"]).name; if(n) return String(n).toLowerCase().replace(/[^a-z0-9-]+/g,"-").replace(/^-+|-+$/g,"") || "mon-app"; }catch(e){}
+    return "mon-app";
+  }
+  var T = null;
+  function crc32(u8){
+    if(!T){ T = new Uint32Array(256); for(var n=0;n<256;n++){ var c=n; for(var k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1); T[n]=c>>>0; } }
+    var crc = 0xFFFFFFFF;
+    for(var i=0;i<u8.length;i++) crc = T[(crc ^ u8[i]) & 255] ^ (crc>>>8);
+    return (crc ^ 0xFFFFFFFF)>>>0;
+  }
+  function zip(files, prefix){
+    var enc = new TextEncoder(), locals=[], centrals=[], offset=0, d = new Date();
+    var time = (d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+    var date = ((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+    Object.keys(files).forEach(function(p){
+      var data = enc.encode(files[p]), name = enc.encode((prefix?prefix+"/":"")+p), crc = crc32(data);
+      var lh = new Uint8Array(30+name.length), v = new DataView(lh.buffer);
+      v.setUint32(0,0x04034b50,true); v.setUint16(4,20,true); v.setUint16(6,0x0800,true); v.setUint16(8,0,true);
+      v.setUint16(10,time,true); v.setUint16(12,date,true); v.setUint32(14,crc,true);
+      v.setUint32(18,data.length,true); v.setUint32(22,data.length,true); v.setUint16(26,name.length,true); v.setUint16(28,0,true);
+      lh.set(name,30);
+      var ch = new Uint8Array(46+name.length), c = new DataView(ch.buffer);
+      c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true);
+      c.setUint16(12,time,true); c.setUint16(14,date,true); c.setUint32(16,crc,true);
+      c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,name.length,true);
+      c.setUint16(30,0,true); c.setUint16(32,0,true); c.setUint16(34,0,true); c.setUint16(36,0,true); c.setUint32(38,0,true); c.setUint32(42,offset,true);
+      ch.set(name,46);
+      locals.push(lh,data); centrals.push(ch);
+      offset += lh.length + data.length;
+    });
+    var cdSize = centrals.reduce(function(a,b){return a+b.length},0);
+    var end = new Uint8Array(22), e = new DataView(end.buffer);
+    e.setUint32(0,0x06054b50,true); e.setUint16(8,centrals.length,true); e.setUint16(10,centrals.length,true);
+    e.setUint32(12,cdSize,true); e.setUint32(16,offset,true);
+    return locals.concat(centrals,[end]);
+  }
+  function script(files, repoUrl){
+    var slug = slugOf(files), out = ["#!/usr/bin/env bash","set -e",'mkdir -p "'+slug+'" && cd "'+slug+'"'], n=0;
+    Object.keys(files).forEach(function(p){
+      var dir = p.indexOf("/")>-1 ? p.slice(0,p.lastIndexOf("/")) : "";
+      if(dir) out.push('mkdir -p "'+dir+'"');
+      var tag = "APPFORGE_EOF_"+(n++);
+      out.push('cat > "'+p+'" <<\''+tag+"'", files[p].replace(/\n$/,""), tag);
+    });
+    out.push("git init -b main","git add .",'git commit -m "Ajout du projet généré avec App Forge"');
+    if(repoUrl){ out.push("git remote add origin "+repoUrl, "git push -u origin main"); }
+    else out.push('echo "Projet créé. Ajoute ton dépôt : git remote add origin <URL> && git push -u origin main"');
+    return out.join("\n")+"\n";
+  }
+
+  /* ----- Base de données ----- */
+  var HIDDEN = ["src/db.js","src/config.js","src/schema.js","supabase-setup.sql"];
+  function forModel(files){
+    var o = {}; Object.keys(files).forEach(function(p){ if(HIDDEN.indexOf(p)<0) o[p]=files[p]; }); return o;
+  }
+  var DB_API = [
+    "API de données disponible dans l'app (objet global DB, chargé avant src/main.js) :",
+    "- await DB.ready ; DB.mode vaut 'supabase', 'local' ou 'memory'.",
+    "- const t = DB.table('nom_table') ; await t.list() renvoie un tableau de lignes ; await t.insert({...}) renvoie la ligne créée ; await t.update(id, {...}) renvoie la ligne modifiée ; await t.remove(id).",
+    "- Chaque ligne a automatiquement id (chaîne) et created_at (date ISO). Les colonnes sont celles décrites dans src/schema.json.",
+    "- N'utilise jamais localStorage ni fetch directement : tout passe par DB. Les opérations sont asynchrones et peuvent échouer : gère les erreurs avec try/catch et affiche un message clair."
+  ].join("\n");
+  var SCHEMA_SPEC = "Schéma dans src/schema.json, en JSON strict : { \"tables\": { \"nom_table\": { \"columns\": { \"nom_colonne\": \"type\" }, \"seed\": [ { ... } ] } } }. Noms de tables et de colonnes en snake_case minuscules (^[a-z][a-z0-9_]*$), sans colonne id ni created_at (automatiques). Types autorisés : text, integer, number, boolean, date (YYYY-MM-DD), datetime (ISO 8601), json. Ajoute 3 à 8 lignes d'exemple réalistes en français par table dans seed.";
+  var DB_SYSTEM = [
+    "Tu es concepteur de bases de données pour une app web. On te donne le projet actuel et la description de la base voulue.",
+    "Tu dois :",
+    "1. Concevoir le schéma dans src/schema.json, en JSON strict : { \"tables\": { \"nom_table\": { \"columns\": { \"nom_colonne\": \"type\" }, \"seed\": [ { ... } ] } } }. Noms de tables et de colonnes en snake_case minuscules (^[a-z][a-z0-9_]*$), sans colonne id ni created_at (elles sont automatiques). Types autorisés : text, integer, number, boolean, date (YYYY-MM-DD), datetime (ISO 8601), json. Ajoute 3 à 8 lignes d'exemple réalistes en français par table dans seed.",
+    "2. Réécrire src/main.js COMPLET pour que l'app lise et écrive ses données via l'objet DB, au lieu de données codées en dur. Ajoute un petit indicateur discret du stockage utilisé (DB.mode) avec les libellés « Mémoire (aperçu) », « Local (navigateur) » ou « Supabase ».",
+    "3. Modifier index.html, src/style.css ou README.md uniquement si c'est nécessaire (états de chargement, erreurs).",
+    "FORMAT DE SORTIE : des blocs commençant par une ligne exactement de la forme",
+    "=== FILE: chemin/du/fichier ===",
+    "suivie du contenu brut, sans balises markdown ni ```. Aucun texte en dehors des blocs.",
+    "Ne renvoie que les fichiers modifiés ou créés (src/schema.json et src/main.js sont obligatoires). Ne renvoie PAS src/db.js, src/config.js, src/schema.js ni supabase-setup.sql : ils sont générés automatiquement.",
+    "L'app doit garder toutes ses fonctionnalités et rester sans erreur. Si src/schema.json existe déjà, fais-le évoluer en conservant les tables existantes sauf demande contraire."
+  ].join("\n");
+  var TYPES = {text:"text",integer:"integer",number:"numeric",boolean:"boolean",date:"date",datetime:"timestamptz",json:"jsonb"};
+  var NAME_RE = /^[a-z][a-z0-9_]*$/;
+  function validateSchema(s){
+    if(!s || typeof s!=="object" || !s.tables || typeof s.tables!=="object") throw new Error("Schéma invalide : « tables » manquant.");
+    var names = Object.keys(s.tables);
+    if(!names.length) throw new Error("Schéma invalide : aucune table.");
+    names.forEach(function(t){
+      if(!NAME_RE.test(t)) throw new Error("Nom de table invalide : " + t);
+      var cols = s.tables[t].columns;
+      if(!cols || typeof cols!=="object" || !Object.keys(cols).length) throw new Error("La table " + t + " n'a pas de colonnes.");
+      Object.keys(cols).forEach(function(c){
+        if(!NAME_RE.test(c) || c==="id" || c==="created_at") throw new Error("Nom de colonne invalide dans " + t + " : " + c);
+        if(!TYPES[cols[c]]) throw new Error("Type inconnu pour " + t + "." + c + " : " + cols[c]);
+      });
+      if(s.tables[t].seed!==undefined && !Array.isArray(s.tables[t].seed)) throw new Error("seed doit être une liste dans " + t);
+    });
+  }
+  function lit(v, type){
+    var pg = TYPES[type];
+    if(v===null || v===undefined) return "null::" + pg;
+    if(type==="boolean") return (v ? "true" : "false") + "::boolean";
+    if(type==="integer" || type==="number") return isFinite(+v) ? String(+v) + "::" + pg : "null::" + pg;
+    if(type==="json") return "'" + JSON.stringify(v).replace(/'/g,"''") + "'::jsonb";
+    return "'" + String(v).replace(/'/g,"''") + "'::" + pg;
+  }
+  function sqlFromSchema(s){
+    var out = ["-- Base de données générée par App Forge.",
+      "-- À exécuter dans Supabase : SQL Editor > New query > coller ce fichier > Run.",
+      "-- Ensuite, renseigne supabaseUrl et supabaseAnonKey dans src/config.js.","",
+      "create extension if not exists pgcrypto;",""];
+    Object.keys(s.tables).forEach(function(t){
+      var cols = s.tables[t].columns, cn = Object.keys(cols);
+      out.push("create table if not exists public." + t + " (", "  id uuid primary key default gen_random_uuid(),");
+      cn.forEach(function(c){ out.push("  " + c + " " + TYPES[cols[c]] + ","); });
+      out.push("  created_at timestamptz not null default now()", ");");
+      out.push("alter table public." + t + " enable row level security;",
+        "drop policy if exists \"appforge_open_" + t + "\" on public." + t + ";",
+        "-- Accès ouvert à la clé publique (anon) : pratique pour démarrer, à durcir avant de stocker des données sensibles.",
+        "create policy \"appforge_open_" + t + "\" on public." + t + " for all to anon using (true) with check (true);");
+      var seed = s.tables[t].seed || [];
+      if(seed.length){
+        var vals = seed.map(function(r){ return "(" + cn.map(function(c){ return lit(r[c], cols[c]); }).join(", ") + ")"; });
+        out.push("insert into public." + t + " (" + cn.join(", ") + ")",
+          "select * from (values", "  " + vals.join(",\n  "), ") as v(" + cn.join(", ") + ")",
+          "where not exists (select 1 from public." + t + ");");
+      }
+      out.push("");
+    });
+    return out.join("\n");
+  }
+  var CONFIG_JS = [
+    "/* Connexion à la base de données (optionnelle).",
+    "   - Laisse vide : les données restent dans le navigateur (localStorage), en local comme une fois déployé.",
+    "   - Pour partager UNE base entre l'app en local et l'app déployée : crée un projet Supabase, exécute",
+    "     supabase-setup.sql, puis renseigne ces deux valeurs (Project Settings > API).",
+    "   La clé « anon » est publique par conception ; ne mets JAMAIS la clé « service_role » ici. */",
+    "window.APP_DB_CONFIG = { supabaseUrl: \"\", supabaseAnonKey: \"\" };",
+    ""
+  ].join("\n");
+  function injectDb(html){
+    if(!html || html.indexOf("src/db.js")>-1) return html;
+    var tags = "<script src=\"src/config.js\"><\/script>\n<script src=\"src/schema.js\"><\/script>\n<script src=\"src/db.js\"><\/script>\n";
+    var re = /<script[^>]*src=["'](?:\.\/)?src\/main\.js["'][^>]*>\s*<\/script>/i;
+    if(re.test(html)) return html.replace(re, function(m){ return tags + m; });
+    return html.replace(/<\/body>/i, function(){ return tags + "</body>"; });
+  }
+  function readmeDb(readme, schema){
+    var names = Object.keys(schema.tables).join(", ");
+    var sec = ["<!-- db:start -->","## Base de données","",
+      "Cette app utilise une base décrite dans `src/schema.json` (tables : " + names + ").","",
+      "- **Sans configuration** : les données sont enregistrées dans le navigateur (localStorage), en local comme une fois déployé. Chaque visiteur a sa propre copie.",
+      "- **Base partagée (Supabase)** : crée un projet gratuit sur https://supabase.com, exécute `supabase-setup.sql` dans le SQL Editor, puis renseigne `supabaseUrl` et `supabaseAnonKey` dans `src/config.js`. La même configuration fonctionne en local et sur Vercel / GitHub Pages : l'app locale et l'app déployée lisent alors la même base.",
+      "- La clé « anon » est publique par conception. Les règles d'accès du script SQL sont ouvertes : ajoute une authentification avant de stocker des données sensibles.",
+      "<!-- db:end -->",""].join("\n");
+    var re = /<!-- db:start -->[\s\S]*?<!-- db:end -->\n?/;
+    if(re.test(readme)) return readme.replace(re, function(){ return sec; });
+    return readme.replace(/\s+$/,"") + "\n\n" + sec;
+  }
+  function finalizeDb(files, tplDb){
+    var raw = files["src/schema.json"];
+    if(raw===undefined) return files;
+    var schema;
+    try{ schema = JSON.parse(raw); }catch(e){ throw new Error("Le schéma généré n'est pas du JSON valide. Réessaie."); }
+    validateSchema(schema);
+    var pretty = JSON.stringify(schema, null, 2);
+    files["src/schema.json"] = pretty + "\n";
+    files["src/schema.js"] = "/* Schéma de la base (généré depuis schema.json) */\nwindow.APP_SCHEMA = " + pretty.replace(/<\//g,"<\\/") + ";\n";
+    files["src/db.js"] = tplDb;
+    if(files["src/config.js"]===undefined) files["src/config.js"] = CONFIG_JS;
+    files["supabase-setup.sql"] = sqlFromSchema(schema);
+    files["index.html"] = injectDb(files["index.html"]);
+    files["README.md"] = readmeDb(files["README.md"] || "# " + slugOf(files) + "\n", schema);
+    return files;
+  }
+  function size(n){ return n<1024 ? n+" o" : (Math.round(n/102.4)/10)+" Ko"; }
+  return {SCHEMA_SPEC:SCHEMA_SPEC,DB_API:DB_API,DB_SYSTEM:DB_SYSTEM,forModel:forModel,finalizeDb:finalizeDb,injectDb:injectDb,sqlFromSchema:sqlFromSchema,SYSTEM:SYSTEM,parse:parse,parsePartial:parsePartial,serialize:serialize,previewHtml:previewHtml,slugOf:slugOf,zip:zip,script:script,size:size,crc32:crc32};
+})();
+</script>
+<script>
+(function(){
+  var EXAMPLES = ["Pomodoro + stats","Convertisseur d'unités","Jeu du serpent","Suivi de dépenses","Générateur de mots de passe","Quiz de culture générale"];
+  var $ = function(id){return document.getElementById(id)};
+  var prompt = $("prompt"), go = $("go"), goTxt = $("goTxt"), err = $("err");
+  var frame = $("frame"), empty = $("empty"), histEl = $("hist"), viewer = $("viewer");
+  var files = null, history = [], activeId = null, busy = false, ctrl = null, sample = null, openFile = "index.html";
+  var progEl = $("prog"), barFill = $("barfill"), phaseEl = $("phase"), etaTxt = $("etaTxt");
+  var startT = 0, chars = 0, expected = 18000, timer = null, firstT = 0;
+  var liveText = "", liveKey = "", liveTimer = null, followLive = true, generating = false;
+  var liveBase = {}, livePreview = true, activeKind = "app", currentItem = null;
+  var TPL_DB = document.getElementById("tpl-db").textContent;
+  var dbGo = $("dbGo"), dbGoTxt = $("dbGoTxt");
+  var tabs = document.querySelectorAll(".tab");
+
+  EXAMPLES.forEach(function(t){
+    var b = document.createElement("button"); b.className="chip"; b.textContent=t;
+    b.onclick=function(){ prompt.value=t; prompt.focus(); };
+    $("chips").appendChild(b);
+  });
+
+  tabs.forEach(function(t){
+    t.onclick=function(){
+      tabs.forEach(function(x){x.classList.toggle("on",x===t)});
+      var p = t.dataset.tab==="preview";
+      $("pane-preview").classList.toggle("hidden",!p);
+      $("pane-code").classList.toggle("hidden",p);
+    };
+  });
+
+  function showError(m){ err.textContent=m; err.classList.toggle("hidden",!m); }
+  function showDenied(){
+    err.innerHTML = "";
+    var t = document.createElement("div");
+    t.textContent = "L'autorisation d'utiliser Claude a été refusée. Ce refus dure jusqu'au rechargement de la page : recharge, puis accepte la demande. S'il persiste, réactive-le dans le menu Permissions de l'artifact.";
+    var b = document.createElement("button"); b.className="btn ghost"; b.style.marginTop="8px"; b.textContent="Recharger la page";
+    b.onclick=function(){ location.reload(); };
+    err.appendChild(t); err.appendChild(b); err.classList.remove("hidden");
+  }
+
+  /* ----- ETA ----- */
+  function fmtMin(sec){
+    if(sec < 45) return "moins d'une minute";
+    var m = Math.round(sec/60);
+    return "≈ " + Math.max(1,m) + " min restante" + (m>1?"s":"");
+  }
+  function tick(){
+    var el = (Date.now()-startT)/1000, tier = $("tier").value;
+    if(chars < 50){
+      phaseEl.textContent = "Réflexion…";
+      var g = tier==="quick" ? 20 : (tier==="default" ? 60 : 120);
+      var rest = Math.max(20, g + expected/(tier==="quick"?120:60) - el);
+      etaTxt.textContent = "estimation : " + fmtMin(rest);
+      barFill.style.width = Math.min(8, 2 + el/4) + "%";
+      return;
+    }
+    if(chars > expected*0.92) expected = chars*1.25;
+    var rate = chars / Math.max(1, el - firstT);
+    var remain = Math.max(0,(expected - chars)/rate);
+    phaseEl.textContent = "Écriture du projet · " + Math.round(chars/100)/10 + " k caractères";
+    etaTxt.textContent = fmtMin(remain);
+    barFill.style.width = Math.min(97, 8 + 89*chars/expected) + "%";
+  }
+  function startProg(isEdit){
+    startT = Date.now(); chars = 0; firstT = 0;
+    expected = isEdit ? Math.max(12000, AF.serialize(files).length*1.05) : 18000;
+    progEl.classList.remove("hidden"); barFill.style.width="2%";
+    tick(); timer = setInterval(tick,1000);
+  }
+  function stopProg(done){
+    clearInterval(timer); timer=null;
+    if(done){ barFill.style.width="100%"; phaseEl.textContent="Terminé"; etaTxt.textContent="✓"; setTimeout(function(){progEl.classList.add("hidden")},1800); }
+    else progEl.classList.add("hidden");
+  }
+
+  /* ----- rendu ----- */
+  function render(){
+    var html = files ? AF.previewHtml(files) : "";
+    if(!html){ frame.classList.add("hidden"); empty.classList.remove("hidden"); return; }
+    empty.classList.add("hidden"); frame.classList.remove("hidden");
+    frame.srcdoc = html;
+  }
+  function sortedPaths(){
+    var ps = Object.keys(files);
+    // dossiers d'abord, puis fichiers, comme sur GitHub
+    return ps.sort(function(a,b){
+      var da = a.indexOf("/")>-1, db = b.indexOf("/")>-1;
+      if(da!==db) return da ? -1 : 1;
+      return a.localeCompare(b);
+    });
+  }
+  function renderTree(f, writing){
+    f = f || files;
+    var tree = $("tree"); tree.innerHTML="";
+    var ps = Object.keys(f).sort(function(a,b){
+      var da = a.indexOf("/")>-1, db = b.indexOf("/")>-1;
+      if(da!==db) return da ? -1 : 1;
+      return a.localeCompare(b);
+    }), seenDirs = {};
+    ps.forEach(function(p){
+      var i = p.lastIndexOf("/");
+      if(i>-1){
+        var d = p.slice(0,i);
+        if(!seenDirs[d]){
+          seenDirs[d]=1;
+          var dr = document.createElement("div"); dr.className="frow dir"; dr.style.cursor="default";
+          dr.innerHTML='<span class="ic" style="color:var(--folder)">📁</span><span></span>';
+          dr.children[1].textContent = d;
+          tree.appendChild(dr);
+        }
+      }
+      var b = document.createElement("button"); b.className="frow"+(p===openFile?" on":"")+(p===writing?" writing":"");
+      b.innerHTML='<span class="ic">📄</span><span class="nm"></span><span class="sz"></span>';
+      b.querySelector(".nm").textContent = i>-1 ? "   "+p.slice(i+1) : p;
+      b.querySelector(".sz").textContent = AF.size(f[p].length);
+      b.onclick = function(){
+        openFile = p;
+        if(generating){ followLive = false; liveUpdate(); }
+        else { showFile(); renderTree(); }
+      };
+      tree.appendChild(b);
+    });
+    $("repoName").textContent = f["package.json"] ? AF.slugOf(f) : "nouveau-projet";
+    $("repoCount").textContent = ps.length + " fichier" + (ps.length>1?"s":"") + (writing ? " · en cours" : "");
+  }
+  function showFile(f, stick){
+    f = f || files;
+    if(!f) { viewer.textContent=""; $("vpath").textContent="—"; return; }
+    if(f[openFile]===undefined) openFile = f["index.html"]!==undefined ? "index.html" : Object.keys(f)[0];
+    $("vpath").textContent = openFile;
+    viewer.textContent = f[openFile];
+    viewer.scrollTop = stick ? viewer.scrollHeight : 0;
+  }
+  /* ----- vue en direct pendant la génération ----- */
+  function liveUpdate(){
+    var p = AF.parsePartial(liveText);
+    if(!p.order.length) return;
+    var f = Object.assign({}, liveBase, p.files);
+    if(followLive) openFile = p.current;
+    renderTree(f, p.current);
+    showFile(f, followLive);
+    var cur = p.files[p.current] || "", lines = cur.split("\n");
+    $("livePath").textContent = p.current;
+    $("liveMeta").textContent = lines.length + " lignes · fichier " + p.order.length;
+    $("liveTail").textContent = lines.slice(-4).join("\n");
+    if(!livePreview) return;
+    var complete = p.order.filter(function(x){ return x!==p.current; });
+    var key = complete.join("|");
+    if(complete.length && key!==liveKey){
+      var cf = Object.assign({}, liveBase);
+      complete.forEach(function(c){ cf[c] = p.files[c]; });
+      if(!cf["index.html"]) return;
+      liveKey = key;
+      if(cf["src/schema.json"]) cf["index.html"] = AF.injectDb(cf["index.html"]);
+      empty.classList.add("hidden"); frame.classList.remove("hidden");
+      frame.srcdoc = AF.previewHtml(cf);
+    }
+  }
+  function startLive(kind){
+    generating = true; followLive = true; liveText = ""; liveKey = "";
+    liveBase = files ? Object.assign({}, files) : {};
+    livePreview = kind !== "db" || !files;
+    $("livebar").classList.remove("hidden");
+    $("livePath").textContent = "…"; $("liveMeta").textContent = ""; $("liveTail").textContent = "";
+    if(!files){
+      frame.classList.add("hidden"); empty.classList.remove("hidden");
+      $("emptyIc").textContent = "⚒"; $("emptyTxt").textContent = "Claude écrit ton app. L'aperçu apparaît dès que les premiers fichiers sont prêts.";
+    }
+    liveTimer = setInterval(liveUpdate, 600);
+  }
+  function stopLive(){
+    generating = false; clearInterval(liveTimer); liveTimer = null;
+    $("livebar").classList.add("hidden");
+    $("emptyIc").textContent = "✨"; $("emptyTxt").textContent = "Ton app apparaîtra ici.";
+  }
+
+  function refreshDb(){
+    var has = !!(files && files["src/schema.json"]);
+    dbGoTxt.textContent = has ? "Modifier la base de données" : (files ? "Créer la base de données" : "Créer l'app + sa base de données");
+    $("dbLabel").textContent = files ? "Décris ta base : quelles données, et à quoi elle ressemble" : "Décris ton app et sa base de données : quelles données, et à quoi elle ressemble";
+    var info = $("dbInfo");
+    if(!has){
+      info.textContent = "Une IA conçoit les tables et branche ton app dessus. Sans réglage, les données restent dans le navigateur (en local comme une fois déployé). Avec Supabase, l'app locale et l'app déployée partagent la même base. L'aperçu utilise une base en mémoire.";
+      return;
+    }
+    try{
+      var sc = JSON.parse(files["src/schema.json"]);
+      info.textContent = "Base créée : " + Object.keys(sc.tables).map(function(t){ return t + " (" + Object.keys(sc.tables[t].columns).length + " col.)"; }).join(", ") + ". Pour la partager entre local et déployé : exécute supabase-setup.sql dans Supabase, puis remplis src/config.js.";
+    }catch(e){ info.textContent = ""; }
+  }
+  function verNum(){ return currentItem ? currentItem.n : 1; }
+  function refreshVer(){
+    if(!files) return;
+    var n = verNum(), t = currentItem && currentItem.t ? new Date(currentItem.t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "";
+    $("zipTop").textContent = "Télécharger .zip (v" + n + ")";
+    $("gitZip").textContent = "1 · Télécharger le projet (.zip, v" + n + ")";
+    $("verLabel").innerHTML = "Le zip contient <b>exactement l'aperçu affiché</b> : version <b>" + n + "</b>" + (t ? ", générée à " + t : "") + " · " + Object.keys(files).length + " fichiers.";
+  }
+  function setFiles(f, item){
+    if(item) currentItem = item;
+    files = f;
+    var has = !!f && Object.keys(f).length>0;
+    ["reload","zipTop"].forEach(function(id){ $(id).classList.toggle("hidden",!has); });
+    $("gitbox").classList.toggle("hidden",!has);
+    if(has){
+      renderTree(); showFile(); render(); refreshGit(); refreshDb(); refreshVer();
+      $("plabel").textContent = "Que veux-tu modifier ?";
+      prompt.placeholder = "Ex : ajoute un mode sombre, change les couleurs, ajoute un bouton reset…";
+      goTxt.textContent = "Modifier l'app";
+    }
+  }
+
+  function renderHist(){
+    histEl.innerHTML="";
+    if(!history.length){ histEl.innerHTML='<span class="hint">Rien pour l\'instant.</span>'; return; }
+    history.slice().reverse().forEach(function(h){
+      var b=document.createElement("button"); b.textContent=h.title; b.title=h.title;
+      if(h.id===activeId) b.className="on";
+      b.onclick=function(){ activeId=h.id; setFiles(h.files, h); renderHist(); };
+      histEl.appendChild(b);
+    });
+  }
+  function loadHistory(){
+    try{ var raw = localStorage.getItem("appforge:history2"); if(raw){ history = JSON.parse(raw)||[]; history.forEach(function(h,i){ if(!h.n) h.n = i+1; }); renderHist(); } }catch(e){}
+  }
+  function saveHistory(){
+    try{ localStorage.setItem("appforge:history2", JSON.stringify(history.slice(-5))); }catch(e){}
+  }
+  function setBusy(b){
+    busy=b; go.disabled=false; dbGo.disabled=false;
+    var spin = '<span class="spin"></span> Génération… (clique pour annuler)';
+    if(b){
+      if(activeKind==="db"){ dbGoTxt.innerHTML = spin; go.disabled = true; }
+      else { goTxt.innerHTML = spin; dbGo.disabled = true; }
+    } else {
+      goTxt.textContent = files ? "Modifier l'app" : "Générer l'app";
+      refreshDb();
+    }
+  }
+
+  /* ----- génération ----- */
+  async function generate(kind){
+    kind = kind || "app";
+    if(busy){ if(ctrl) ctrl.abort(); return; }
+    var box = kind==="db" ? $("dbPrompt") : prompt;
+    var text = box.value.trim();
+    if(!text){ showError(kind==="db" ? "Décris d'abord la base de données que tu veux." : "Décris d'abord l'app que tu veux."); return; }
+    if(!sample){ showError("La génération n'est pas disponible dans ce contexte (capacité indisponible)."); return; }
+    showError("");
+    try{
+      var perms = await claude.use("permissions");
+      if(perms){
+        var st = await perms.state("sample");
+        if(st==="prompt"){ var r = await perms.request(["sample"]); st = r["sample"]; }
+        if(st==="denied"){ showDenied(); return; }
+      }
+    }catch(e){}
+    activeKind = kind;
+    setBusy(true);
+    ctrl = new AbortController();
+    var isEdit = !!files;
+    startProg(isEdit);
+    var input, hasDb = !!(files && files["src/schema.json"]);
+    if(kind==="db" && !files){
+      input = AF.SYSTEM + "\n\n" + AF.DB_API + "\n\nCette app DOIT utiliser une base de données. En plus des fichiers habituels, produis " + AF.SCHEMA_SPEC + " Écris src/main.js pour lire et écrire les données via l'objet DB (jamais de données codées en dur), avec un petit indicateur discret du stockage (DB.mode : « Mémoire (aperçu) », « Local (navigateur) », « Supabase »). Ne produis PAS src/db.js, src/config.js, src/schema.js ni supabase-setup.sql : ils sont générés automatiquement.\n\nDemande de l'utilisateur (app et base de données) : " + text;
+    } else if(kind==="db"){
+      input = AF.DB_SYSTEM + "\n\n" + AF.DB_API + "\n\nProjet actuel :\n\n" + AF.serialize(AF.forModel(files)) + "\n\nBase de données voulue :\n" + text;
+    } else if(isEdit){
+      input = AF.SYSTEM + (hasDb ? "\n\n" + AF.DB_API + "\nCe projet utilise déjà une base de données : conserve son usage via DB et renvoie aussi src/schema.json. Ne renvoie pas src/db.js, src/config.js, src/schema.js ni supabase-setup.sql." : "")
+        + "\n\nVoici le projet actuel :\n\n" + AF.serialize(AF.forModel(files)) + "\n\nApplique cette modification et renvoie TOUS les fichiers du projet, complets, dans le même format :\n" + text;
+    } else {
+      input = AF.SYSTEM + "\n\nDemande de l'utilisateur : " + text;
+    }
+    var before = files;
+    tabs[0].click();
+    startLive(kind);
+    try{
+      var res = await sample(input, {
+        signal: ctrl.signal, cache:false, modelTier: $("tier").value,
+        onText: function(o){
+          chars = o.text.length;
+          if(!firstT && chars>=50) firstT = (Date.now()-startT)/1000;
+          liveText = o.text;
+        }
+      });
+      liveText = res.text; stopLive();
+      var parsed = AF.parse(res.text), merged;
+      if(kind==="db" && !before){
+        if(!parsed["index.html"] || !parsed["src/schema.json"] || !parsed["src/main.js"]) throw {message:"La réponse est incomplète (index.html, src/main.js et src/schema.json sont nécessaires). Réessaie."};
+        merged = parsed;
+      } else if(kind==="db"){
+        if(!parsed["src/schema.json"] || !parsed["src/main.js"]) throw {message:"La réponse ne contient pas le schéma (src/schema.json) et src/main.js. Réessaie."};
+        merged = Object.assign({}, files, parsed);
+      } else {
+        if(!parsed["index.html"]) throw {message:"La réponse ne contient pas de fichier index.html valide."};
+        merged = parsed;
+        if(hasDb && !merged["src/schema.json"]) merged["src/schema.json"] = files["src/schema.json"];
+      }
+      merged = AF.finalizeDb(merged, TPL_DB);
+      var id = "h"+Date.now(), n = history.reduce(function(m,h){ return Math.max(m,h.n||0); }, 0) + 1;
+      var item = {id:id, n:n, t:Date.now(), title:(kind==="db"?"🗄 ":(isEdit?"✎ ":"")) + text.slice(0,60), files:merged};
+      history.push(item);
+      activeId=id; openFile = (kind==="db" && before) ? "src/schema.json" : "index.html";
+      setFiles(merged, item); renderHist(); saveHistory();
+      box.value="";
+      tabs[0].click();
+      stopProg(true);
+      var names = {complex:"le plus puissant", "default":"équilibré", quick:"rapide"}, ap = res.modelTierApplied;
+      $("hint").textContent = "Version " + n + " · niveau « " + (names[ap]||ap) + " »" + (ap!==$("tier").value ? " (le niveau demandé n'était pas disponible avec ton offre)" : "") + (res.truncated ? " · réponse tronquée : redemande une version plus simple." : ".");
+    }catch(e){
+      stopLive();
+      files = before; if(files){ setFiles(files); } else { $("repoName").textContent="mon-app"; $("tree").innerHTML=""; $("repoCount").textContent=""; viewer.textContent=""; $("vpath").textContent="—"; frame.classList.add("hidden"); empty.classList.remove("hidden"); }
+      if(e && e.code==="cancelled"){ showError("Génération annulée."); }
+      else if(e && e.code==="not_granted"){ showDenied(); }
+      else if(e && e.code==="sampling_disabled"){ showError("Claude n'est pas disponible pour ce compte ou cette organisation."); }
+      else if(e && e.code==="rate_limited"){ showError("Trop de requêtes, patiente un instant puis réessaie."); }
+      else { showError((e && e.message) || "Une erreur est survenue."); }
+      tabs[0].click();
+    }finally{
+      ctrl=null; setBusy(false); if(timer) stopProg(false); if(liveTimer) stopLive();
+    }
+  }
+
+  /* ----- Git / export ----- */
+  function repoPath(host){
+    var m = $("gitUrl").value.trim().match(new RegExp("^https?://(?:www\\.)?"+host+"\\.com/([^/\\s]+(?:/[^/\\s]+)*?)/?$","i"));
+    if(!m) return null;
+    var pth = m[1].replace(/\.git$/i,"");
+    return pth.split("/").length>=2 ? pth : null;
+  }
+  function cloneUrl(){
+    var h = $("gitHost").value, p = repoPath(h);
+    return p ? "https://"+h+".com/"+p+".git" : "";
+  }
+  function refreshGit(){
+    if(!files) return;
+    var h = $("gitHost").value, label = h==="github" ? "GitHub" : "GitLab";
+    $("gitOpen").textContent = "2 · Ouvrir " + label + " ↗";
+    $("gitUrl").placeholder = "URL du dépôt (optionnel) : https://"+h+".com/ton-compte/"+AF.slugOf(files);
+    $("gitCmds").textContent = "bash envoyer-sur-git.sh";
+  }
+  async function save(name, data){
+    try{
+      var dl = await claude.use("downloads");
+      if(!dl){ showError("Téléchargement indisponible ici."); return false; }
+      await dl.save({filename:name, data:data}); return true;
+    }catch(e){ return false; }
+  }
+  function zipBlob(snap){ return new Blob(AF.zip(snap, AF.slugOf(snap)), {type:"application/zip"}); }
+  function downloadZip(){
+    if(!files) return;
+    var snap = Object.assign({}, files);   // instantané exact de ce qui est affiché dans l'aperçu
+    save(AF.slugOf(snap) + "-v" + verNum() + ".zip", zipBlob(snap));
+  }
+  $("gitHost").onchange = refreshGit; $("gitUrl").oninput = refreshGit;
+  $("zipTop").onclick = downloadZip;
+  $("gitZip").onclick = downloadZip;
+  $("gitSh").onclick = function(){
+    if(!files) return;
+    var url = cloneUrl();
+    var sh = AF.script(files, url);
+    // le script téléchargé s'appelle envoyer-sur-git.sh
+    save("envoyer-sur-git.sh", sh);
+    $("gitMsg").textContent = url ? "Script prêt : il poussera vers " + url : "Script prêt. Renseigne l'URL du dépôt avant de le télécharger pour qu'il fasse aussi le push.";
+  };
+  $("gitCopy").onclick = async function(){
+    var b=$("gitCopy");
+    try{ await navigator.clipboard.writeText("bash envoyer-sur-git.sh"); b.textContent="Copié ✓"; }catch(e){ b.textContent="Échec"; }
+    setTimeout(function(){ b.textContent="Copier la commande"; },1500);
+  };
+  $("gitOpen").onclick = function(){
+    var h = $("gitHost").value, p = repoPath(h), url;
+    if(h==="github") url = p ? "https://github.com/"+p+"/upload/main" : "https://github.com/new";
+    else url = p ? "https://gitlab.com/"+p+"/-/tree/main" : "https://gitlab.com/projects/new";
+    window.open(url,"_blank","noopener,noreferrer");
+    $("gitMsg").textContent = p
+      ? (h==="github" ? "Sur la page ouverte, glisse le contenu du dossier décompressé (fichiers + dossier src), puis « Commit changes »."
+                      : "Sur GitLab : bouton « + » > « Upload file », un fichier à la fois, ou utilise le script .sh.")
+      : "Crée d'abord le dépôt (vide), puis colle son URL ci-dessus et reviens sur ce bouton.";
+  };
+  $("copy").onclick = async function(){
+    var b=$("copy");
+    try{ await navigator.clipboard.writeText(files ? files[openFile] : ""); b.textContent="Copié ✓"; }catch(e){ b.textContent="Échec"; }
+    setTimeout(function(){ b.textContent="Copier ce fichier"; },1500);
+  };
+  $("reload").onclick=function(){ render(); };
+
+  go.onclick = function(){ generate("app"); };
+  dbGo.onclick = function(){ generate("db"); };
+  prompt.addEventListener("keydown",function(e){ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") generate("app"); });
+  loadHistory();
+  (async function(){
+    try{ sample = await claude.use("sample"); }catch(e){ sample=null; }
+    if(!sample){ $("hint").textContent = "⚠ La génération par Claude n'est pas disponible ici."; go.disabled = true; }
+  })();
+})();
+</script>
+</body>
+</html>
