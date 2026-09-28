@@ -781,7 +781,8 @@ var AF = (function(){
     var box = kind==="db" ? $("dbPrompt") : prompt;
     var text = box.value.trim();
     if(!text){ showError(kind==="db" ? "Décris d'abord la base de données que tu veux." : "Décris d'abord l'app que tu veux."); return; }
-    if(!sample){ showError("La génération n'est pas disponible dans ce contexte (capacité indisponible)."); return; }
+    if(!sample){ sample = await getSample(); }
+    if(!sample){ await showDiag(); return; }
     showError("");
     try{
       var perms = await claude.use("permissions");
@@ -925,9 +926,37 @@ var AF = (function(){
   dbGo.onclick = function(){ generate("db"); };
   prompt.addEventListener("keydown",function(e){ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") generate("app"); });
   loadHistory();
+  async function getSample(){
+    try{ return (typeof claude !== "undefined") ? await claude.use("sample") : null; }catch(e){ return null; }
+  }
+  async function permState(){
+    if(typeof claude === "undefined") return "nocl";
+    try{
+      var p = await claude.use("permissions");
+      if(p) return await p.state("sample");
+    }catch(e){}
+    return "unknown";
+  }
+  async function showDiag(){
+    var st = await permState(), msg;
+    if(st==="denied"){
+      msg = "Tu as refusé l'autorisation d'utiliser Claude pour cette page, et ce refus est mémorisé. Ouvre le menu Permissions de l'artifact, réactive l'accès à Claude, puis recharge la page.";
+    } else if(st==="nocl"){
+      msg = "Cette page n'est pas ouverte dans le viewer d'artifacts de claude.ai, donc elle ne peut pas appeler Claude. Ouvre-la depuis son lien claude.ai/artifact.";
+    } else {
+      msg = "La page n'a pas accès à Claude pour l'instant. Recharge la page et accepte la demande d'autorisation. Si elle ne s'affiche pas, vérifie le menu Permissions de l'artifact, ou que ton organisation autorise cette fonction.";
+    }
+    err.innerHTML = "";
+    var t = document.createElement("div"); t.textContent = msg;
+    var b = document.createElement("button"); b.className="btn ghost"; b.style.marginTop="8px"; b.textContent="Recharger la page";
+    b.onclick=function(){ location.reload(); };
+    err.appendChild(t); err.appendChild(b); err.classList.remove("hidden");
+  }
   (async function(){
-    try{ sample = await claude.use("sample"); }catch(e){ sample=null; }
-    if(!sample){ $("hint").textContent = "⚠ La génération par Claude n'est pas disponible ici."; go.disabled = true; }
+    sample = await getSample();
+    if(!sample){
+      $("hint").textContent = "⚠ Claude n'est pas accessible depuis cette page pour le moment. Clique sur « Générer » pour voir pourquoi et comment corriger.";
+    }
   })();
 })();
 </script>
